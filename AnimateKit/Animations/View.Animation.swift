@@ -9,6 +9,7 @@
 import Foundation
 
 public struct ViewAnimation: Animation {
+    
     public var duration: TimeInterval
     public var delay: TimeInterval
     public var options: UIView.AnimationOptions
@@ -22,6 +23,7 @@ public struct ViewAnimation: Animation {
         self.options = options
         self.closure = closure
     }
+    
 }
 
 extension ViewAnimation {

@@ -10,8 +10,8 @@ import Foundation
 
 public final class AnimationToken {
     
-    private let view: UIView
-    private let animations: [Animation]
+    weak var view: UIView?
+    private var animations: [Animation]
     private let mode: AnimationMode
     private var isValid: Bool = true
     private var after: TimeInterval
@@ -34,6 +34,7 @@ public final class AnimationToken {
     deinit {
         // Perform animation
         perform {}
+        view = nil
     }
     
     internal func perform(completionHandler: @escaping () -> Void) {
@@ -55,18 +56,18 @@ public final class AnimationToken {
                     let label = view as? UILabel,
                     let _ = animations as? [TextAnimation]
                     else {
-                        view.performAnimations(animations,
-                                               after: after,
-                                               completionHandler: completionHandler)
+                        view?.performAnimations(animations,
+                                                after: after,
+                                                completionHandler: completionHandler)
                         return
                 }
                 label.performTextAnimations(animations,
                                             after: after,
                                             completionHandler: completionHandler)
             default:
-                view.performAnimations(animations,
-                                       after: after,
-                                       completionHandler: completionHandler)
+                view?.performAnimations(animations,
+                                        after: after,
+                                        completionHandler: completionHandler)
             }
             
         case .parallel:
@@ -76,7 +77,7 @@ public final class AnimationToken {
                     let label = view as? UILabel,
                     let _ = animations as? [TextAnimation]
                     else {
-                        view.performAnimationsInParallel(animations,
+                        view?.performAnimationsInParallel(animations,
                                                          after: after,
                                                          completionHandler: completionHandler)
                         return
@@ -85,11 +86,16 @@ public final class AnimationToken {
                                                       after: after,
                                                       completionHandler: completionHandler)
             default:
-                view.performAnimationsInParallel(animations,
-                                                 after: after,
-                                                 completionHandler: completionHandler)
+                view?.performAnimationsInParallel(animations,
+                                                  after: after,
+                                                  completionHandler: completionHandler)
             }
         }
+    }
+    
+    public func cancelPendingAnimations() {
+        self.animations = []
+        view?.cancelAnimations()
     }
     
 }

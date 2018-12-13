@@ -143,4 +143,11 @@ extension UIView {
         }
     }
     
+    public func cancelAnimations() {
+        UIView.beginAnimations(nil, context: nil)
+        UIView.setAnimationBeginsFromCurrentState(true)
+        UIView.setAnimationDuration(0.1)
+        UIView.commitAnimations()
+    }
+    
 }
