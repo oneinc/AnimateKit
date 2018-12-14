@@ -33,8 +33,75 @@ public final class AnimationToken {
     
     deinit {
         // Perform animation
-        perform {}
+        AnimationToken.perform(withView: self.view,
+                               animations: self.animations,
+                               mode: self.mode,
+                               isValid: self.isValid,
+                               after: self.after,
+                               completion: self.completion,
+                               completionHandler: {})
+        completion = nil
         view = nil
+    }
+    
+    internal static func perform(withView view: UIView?,
+                                 animations: [Animation],
+                                 mode: AnimationMode,
+                                 isValid: Bool,
+                                 after: TimeInterval,
+                                 completion: (() -> ())?,
+                                 completionHandler: @escaping () -> Void) {
+        
+        // To prevent the animation from being executed twice, we invalidate
+        // the token once its animation has been performed
+        guard isValid else {
+            completion?()
+            return
+        }
+        
+        switch mode {
+        case .sequential:
+            switch view {
+            case view as UILabel:
+                guard
+                    let label = view as? UILabel,
+                    let _ = animations as? [TextAnimation]
+                    else {
+                        view?.performAnimations(animations,
+                                                after: after,
+                                                completionHandler: completionHandler)
+                        return
+                }
+                label.performTextAnimations(animations,
+                                            after: after,
+                                            completionHandler: completionHandler)
+            default:
+                view?.performAnimations(animations,
+                                        after: after,
+                                        completionHandler: completionHandler)
+            }
+            
+        case .parallel:
+            switch view {
+            case view as UILabel:
+                guard
+                    let label = view as? UILabel,
+                    let _ = animations as? [TextAnimation]
+                    else {
+                        view?.performAnimationsInParallel(animations,
+                                                          after: after,
+                                                          completionHandler: completionHandler)
+                        return
+                }
+                label.performTextAnimationsInParallel(animations,
+                                                      after: after,
+                                                      completionHandler: completionHandler)
+            default:
+                view?.performAnimationsInParallel(animations,
+                                                  after: after,
+                                                  completionHandler: completionHandler)
+            }
+        }
     }
     
     internal func perform(completionHandler: @escaping () -> Void) {
