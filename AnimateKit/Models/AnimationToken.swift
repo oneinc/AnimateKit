@@ -11,7 +11,8 @@ import Foundation
 public final class AnimationToken {
     
     weak var view: UIView?
-    private var animations: [Animation]
+    weak var layer: CALayer?
+    private let animations: [Animation]
     private let mode: AnimationMode
     private var isValid: Bool = true
     private var after: TimeInterval
@@ -19,12 +20,14 @@ public final class AnimationToken {
     
     // We don't want the API user to think that they should create tokens
     // themselves, so we make the initializer internal to the framework
-    internal init(view: UIView,
+    internal init(view: UIView? = nil,
+                  layer: CALayer? = nil,
                   animations: [Animation],
                   mode: AnimationMode,
                   after: TimeInterval = 0.0,
                   completion: (() -> ())? = nil) {
         self.view = view
+        self.layer = layer
         self.animations = animations
         self.mode = mode
         self.after = after
@@ -34,6 +37,7 @@ public final class AnimationToken {
     deinit {
         // Perform animation
         AnimationToken.perform(withView: self.view,
+                               layer: self.layer,
                                animations: self.animations,
                                mode: self.mode,
                                isValid: self.isValid,
@@ -41,17 +45,18 @@ public final class AnimationToken {
                                completion: self.completion,
                                completionHandler: {})
         completion = nil
+        layer = nil
         view = nil
     }
     
     internal static func perform(withView view: UIView?,
+                                 layer: CALayer?,
                                  animations: [Animation],
                                  mode: AnimationMode,
                                  isValid: Bool,
                                  after: TimeInterval,
-                                 completion: (() -> ())?,
+                                 completion: (() -> Void)?,
                                  completionHandler: @escaping () -> Void) {
-        
         // To prevent the animation from being executed twice, we invalidate
         // the token once its animation has been performed
         guard isValid else {
@@ -81,6 +86,13 @@ public final class AnimationToken {
                                         completionHandler: completionHandler)
             }
             
+            if let layer = layer,
+                let animations = animations as? [CoreAnimation] {
+                layer.performCoreAnimations(animations,
+                                            after: after,
+                                            completionHandler: completionHandler)
+            }
+            
         case .parallel:
             switch view {
             case view as UILabel:
@@ -100,6 +112,13 @@ public final class AnimationToken {
                 view?.performAnimationsInParallel(animations,
                                                   after: after,
                                                   completionHandler: completionHandler)
+            }
+            
+            if let layer = layer,
+                let animations = animations as? [CoreAnimation] {
+                layer.performCoreAnimationsInParallel(animations,
+                                                      after: after,
+                                                      completionHandler: completionHandler)
             }
         }
     }
@@ -137,6 +156,13 @@ public final class AnimationToken {
                                         completionHandler: completionHandler)
             }
             
+            if let layer = layer,
+                let animations = animations as? [CoreAnimation] {
+                layer.performCoreAnimations(animations,
+                                            after: after,
+                                            completionHandler: completionHandler)
+            }
+            
         case .parallel:
             switch view {
             case view as UILabel:
@@ -145,8 +171,8 @@ public final class AnimationToken {
                     let _ = animations as? [TextAnimation]
                     else {
                         view?.performAnimationsInParallel(animations,
-                                                         after: after,
-                                                         completionHandler: completionHandler)
+                                                          after: after,
+                                                          completionHandler: completionHandler)
                         return
                 }
                 label.performTextAnimationsInParallel(animations,
@@ -157,12 +183,14 @@ public final class AnimationToken {
                                                   after: after,
                                                   completionHandler: completionHandler)
             }
+            
+            if let layer = layer,
+                let animations = animations as? [CoreAnimation] {
+                layer.performCoreAnimationsInParallel(animations,
+                                                      after: after,
+                                                      completionHandler: completionHandler)
+            }
         }
-    }
-    
-    public func cancelPendingAnimations() {
-        self.animations = []
-        view?.cancelAnimations()
     }
     
 }
